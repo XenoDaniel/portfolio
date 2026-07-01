@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daniel | Galactic Portfolio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        :root {
+            --sun-gold: #FDB813;
+            --sun-orange: #FF8C00;
+            --nebula-purple: #6B2FA0;
+            --nebula-blue: #1A3A6B;
+            --deep-space: #030014;
+            --panel-bg: rgba(8, 6, 28, 0.88);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #F0EEF6;
+            --text-secondary: #9B97B0;
+            --accent-cyan: #00D4FF;
+            --accent-pink: #FF3CAC;
+            --accent-violet: #784BA0;
+            --accent-emerald: #10B981;
+            --glow-sun: rgba(253, 184, 19, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--deep-space);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            cursor: default;
+        }
+
+        /* ══════════════ LOADING SCREEN ══════════════ */
+        #loader {
+            position: fixed; inset: 0; z-index: 10000;
+            background: var(--deep-space);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .loader-ring { width: 100px; height: 100px; border-radius: 50%; position: relative; }
+        .loader-ring::before, .loader-ring::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid transparent;
+        }
+        .loader-ring::before { border-top-color: var(--sun-gold); animation: loaderSpin 1.2s linear infinite; }
+        .loader-ring::after { border-bottom-color: var(--accent-cyan); animation: loaderSpin 1.8s linear infinite reverse; inset: 8px; }
+        .loader-core {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 12px; height: 12px; background: var(--sun-gold); border-radius: 50%;
+            box-shadow: 0 0 20px var(--sun-gold), 0 0 60px var(--sun-orange);
+            animation: loaderPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loaderSpin { to { transform: rotate(360deg); } }
+        @keyframes loaderPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        .loader-text {
+            margin-top: 40px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-secondary); animation: loaderFade 2s ease-in-out infinite;
+        }
+        .loader-progress {
+            margin-top: 20px; width: 200px; height: 2px;
+            background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;
+        }
+        .loader-progress-bar {
+            height: 100%; background: linear-gradient(90deg, var(--sun-gold), var(--accent-cyan));
+            border-radius: 2px; width: 0%; transition: width 0.3s ease;
+        }
+        @keyframes loaderFade { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        /* ══════════════ CANVAS & HUD ══════════════ */
+        #galaxy-canvas { position: fixed; inset: 0; z-index: 1; }
+
+        .hud-top {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 24px 36px; display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none;
+        }
+        .hud-logo {
+            pointer-events: auto; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700; font-size: 1.3rem; letter-spacing: -0.5px;
+            display: flex; align-items: center; gap: 10px; cursor: pointer; transition: opacity 0.3s;
+        }
+        .hud-logo:hover { opacity: 0.8; }
+        .hud-logo-dot {
+            width: 10px; height: 10px; background: var(--sun-gold); border-radius: 50%;
+            box-shadow: 0 0 10px var(--sun-gold), 0 0 30px var(--sun-orange);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 0 10px var(--sun-gold), 0 0 30px var(--sun-orange); }
+            50% { box-shadow: 0 0 15px var(--sun-gold), 0 0 50px var(--sun-orange); }
+        }
+
+        .hud-nav { display: flex; gap: 8px; pointer-events: auto; }
+        .hud-nav-btn {
+            padding: 8px 18px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 100px;
+            color: var(--text-secondary); font-size: 0.8rem; font-weight: 500;
+            cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;
+            letter-spacing: 0.3px; backdrop-filter: blur(20px);
+        }
+        .hud-nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.12); }
+        .hud-nav-btn.active { background: rgba(253, 184, 19, 0.12); color: var(--sun-gold); border-color: rgba(253, 184, 19, 0.25); }
+
+        .hud-bottom {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            padding: 24px 36px; display: flex; justify-content: space-between; align-items: flex-end;
+            pointer-events: none;
+        }
+        .hud-hint { font-size: 0.75rem; color: var(--text-secondary); opacity: 0.5; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .hud-hint-icon {
+            width: 24px; height: 24px; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;
+        }
+        .hud-controls { display: flex; gap: 12px; align-items: center; pointer-events: auto; }
+        .hud-slider-group {
+            display: flex; align-items: center; gap: 10px; padding: 8px 16px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 100px; backdrop-filter: blur(20px);
+        }
+        .hud-slider-label { font-size: 0.7rem; color: var(--text-secondary); letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+        .hud-slider { -webkit-appearance: none; width: 80px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; }
+        .hud-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 12px; background: var(--sun-gold);
+            border-radius: 50%; cursor: pointer; box-shadow: 0 0 8px var(--glow-sun);
+        }
+
+        /* ══════════════ TOOLTIP & SUN LABEL ══════════════ */
+        .planet-tooltip {
+            position: fixed; z-index: 200; padding: 10px 18px;
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            border-radius: 12px; backdrop-filter: blur(30px); pointer-events: none;
+            opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; white-space: nowrap;
+        }
+        .planet-tooltip.visible { opacity: 1; transform: translateY(0); }
+        .planet-tooltip-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
+        .planet-tooltip-sub { font-size: 0.72rem; color: var(--text-secondary); }
+
+        .sun-label {
+            position: fixed; z-index: 50; text-align: center; pointer-events: none;
+            opacity: 0; transition: opacity 0.5s;
+        }
+        .sun-label.visible { opacity: 1; }
+        .sun-label-name {
+            font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700;
+            letter-spacing: 3px; text-transform: uppercase; color: var(--sun-gold);
+            text-shadow: 0 0 20px var(--glow-sun);
+        }
+        .sun-label-role { font-size: 0.72rem; color: var(--text-secondary); letter-spacing: 1px; margin-top: 4px; }
+
+        /* ══════════════ PANEL OVERLAY ══════════════ */
+        .panel-overlay {
+            position: fixed; inset: 0; z-index: 500; display: flex;
+            align-items: center; justify-content: flex-end;
+            opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .panel-overlay.open { opacity: 1; visibility: visible; }
+        .panel-backdrop { position: absolute; inset: 0; background: rgba(3, 0, 20, 0.6); backdrop-filter: blur(6px); }
+        
+        .panel {
+            position: relative; width: min(620px, 92vw); height: 100vh;
+            background: var(--panel-bg); border-left: 1px solid var(--panel-border);
+            backdrop-filter: blur(60px); overflow-y: auto;
+            transform: translateX(60px); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+        .panel-overlay.open .panel { transform: translateX(0); }
+        .panel::-webkit-scrollbar { width: 4px; }
+        .panel::-webkit-scrollbar-track { background: transparent; }
+        .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .panel-close {
+            position: sticky; top: 0; z-index: 10; display: flex; justify-content: flex-end;
+            padding: 24px 28px 0; background: linear-gradient(to bottom, var(--panel-bg) 60%, transparent);
+        }
+        .panel-close-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+            color: var(--text-secondary); font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        }
+        .panel-close-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+
+        .panel-content { padding: 20px 40px 80px; }
+        
+        .panel-planet-icon {
+            width: 64px; height: 64px; border-radius: 50%; margin-bottom: 24px;
+            position: relative; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+        }
+        .panel-planet-icon::after {
+            content: ''; position: absolute; inset: -4px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .panel-title { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .panel-subtitle { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 36px; line-height: 1.6; }
+        .panel-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent); margin: 32px 0; }
+
+        /* ── ABOUT PANEL SPECIFICS ── */
+        .about-hero { display: flex; gap: 24px; align-items: center; margin-bottom: 32px; }
+        .about-avatar {
+            width: 90px; height: 90px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--sun-gold), var(--sun-orange)); padding: 2px; flex-shrink: 0;
+        }
+        .about-avatar-inner {
+            width: 100%; height: 100%; border-radius: 50%; background: var(--deep-space);
+            display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+        }
+        .about-intro h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 600; margin-bottom: 4px; }
+        .about-intro p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }
+        .about-bio { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.8; }
+        .about-bio strong { color: var(--text-primary); font-weight: 600; }
+
+        .quirks-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 28px; }
+        .quirk-card {
+            padding: 20px; background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;
+            transition: all 0.3s;
+        }
+        .quirk-card:hover { border-color: rgba(255,255,255,0.12); transform: translateY(-2px); }
+        .quirk-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .quirk-icon { font-size: 1.4rem; }
+        .quirk-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 1rem; }
+        .quirk-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* ── SKILLS PANEL SPECIFICS ── */
+        .skill-category { margin-bottom: 28px; }
+        .skill-category-title {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 2px; color: var(--text-secondary);
+            margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+        }
+        .skill-category-title::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+        
+        .skill-item { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .skill-item:last-child { border-bottom: none; }
+        .skill-icon-wrap {
+            width: 42px; height: 42px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+        }
+        .skill-info { flex: 1; }
+        .skill-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+        .skill-bar-track { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .skill-bar-fill { height: 100%; border-radius: 4px; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 0%; }
+        .skill-level { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; min-width: 36px; text-align: right; }
+
+        /* ── EXPERIENCE PANEL SPECIFICS ── */
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 1px;
+            background: linear-gradient(to bottom, var(--accent-emerald), var(--sun-gold), var(--nebula-purple), transparent);
+        }
+        .timeline-item { position: relative; margin-bottom: 36px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot {
+            position: absolute; left: -24px; top: 6px; width: 11px; height: 11px;
+            border-radius: 50%; border: 2px solid var(--accent-emerald); background: var(--deep-space);
+        }
+        .timeline-item:first-child .timeline-dot { background: var(--accent-emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+        .timeline-date { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--accent-emerald); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+        .timeline-role { font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+        .timeline-company { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px; font-weight: 500; }
+        .timeline-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; }
+        .timeline-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .timeline-tag {
+            padding: 3px 10px; font-size: 0.68rem; background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 100px; color: var(--accent-emerald);
+        }
+
+        /* ── PROJECTS PANEL SPECIFICS ── */
+        .project-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px; overflow: hidden; margin-bottom: 20px; transition: all 0.3s;
+        }
+        .project-card:hover { border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .project-preview { height: 140px; position: relative; overflow: hidden; }
+        .project-preview-bg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .project-preview-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,6,28,1) 0%, transparent 60%); }
+        .project-body { padding: 20px 24px 24px; }
+        .project-type { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent-pink); font-weight: 600; margin-bottom: 8px; }
+        .project-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; }
+        .project-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+        .project-stack { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+        .project-stack-tag { padding: 3px 10px; font-size: 0.68rem; background: rgba(120, 75, 160, 0.12); border: 1px solid rgba(120, 75, 160, 0.2); border-radius: 100px; color: #B794F6; }
+        .project-links-row { display: flex; gap: 10px; }
+        .project-link {
+            padding: 8px 18px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+            text-decoration: none; transition: all 0.3s; display: flex; align-items: center; gap: 6px;
+        }
+        .project-link-primary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); }
+        .project-link-primary:hover { background: rgba(255,255,255,0.1); }
+        .project-link-secondary { color: var(--text-secondary); }
+        .project-link-secondary:hover { color: var(--text-primary); }
+
+        /* ── CONTACT PANEL SPECIFICS ── */
+        .contact-methods { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+        .contact-method {
+            display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px; text-decoration: none; color: var(--text-primary); transition: all 0.3s;
+        }
+        .contact-method:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); transform: translateX(4px); }
+        .contact-method-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .contact-method-info { flex: 1; }
+        .contact-method-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .contact-method-value { font-weight: 600; font-size: 0.9rem; }
+        .contact-method-arrow { color: var(--text-secondary); transition: transform 0.3s; }
+        .contact-method:hover .contact-method-arrow { transform: translateX(4px); color: var(--text-primary); }
+
+        .contact-form-group { margin-bottom: 16px; }
+        .contact-form-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); margin-bottom: 8px; }
+        .contact-form-input, .contact-form-textarea {
+            width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+            color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            outline: none; transition: border-color 0.3s;
+        }
+        .contact-form-input:focus, .contact-form-textarea:focus { border-color: rgba(253, 184, 19, 0.3); }
+        .contact-form-textarea { min-height: 120px; resize: vertical; }
+        .contact-form-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, var(--sun-gold), var(--sun-orange));
+            color: #000; font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+            font-size: 0.9rem; cursor: pointer; transition: all 0.3s; letter-spacing: 0.5px;
+        }
+        .contact-form-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(253, 184, 19, 0.3); }
+
+        /* ══════════════ RESPONSIVE ══════════════ */
+        @media (max-width: 768px) {
+            .hud-top { padding: 16px 20px; }
+            .hud-bottom { padding: 16px 20px; }
+            .hud-nav { display: none; }
+            .hud-slider-group { display: none; }
+            .panel { width: 100vw; }
+            .panel-content { padding: 20px 24px 60px; }
+            .mobile-nav-toggle { display: flex !important; }
+        }
+
+        .mobile-nav-toggle {
+            display: none; width: 40px; height: 40px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(20px); cursor: pointer; flex-direction: column;
+            align-items: center; justify-content: center; gap: 4px; pointer-events: auto;
+        }
+        .mobile-nav-toggle span { width: 16px; height: 1.5px; background: var(--text-secondary); border-radius: 2px; transition: 0.3s; }
+
+        .mobile-menu {
+            position: fixed; inset: 0; z-index: 9000; background: rgba(3, 0, 20, 0.95);
+            backdrop-filter: blur(40px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 24px;
+            opacity: 0; visibility: hidden; transition: all 0.4s;
+        }
+        .mobile-menu.open { opacity: 1; visibility: visible; }
+        .mobile-menu-btn {
+            font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600;
+            color: var(--text-secondary); background: none; border: none; cursor: pointer;
+            transition: color 0.3s; padding: 8px 20px;
+        }
+        .mobile-menu-btn:hover { color: var(--text-primary); }
+        .mobile-menu-close {
+            position: absolute; top: 24px; right: 24px; width: 40px; height: 40px;
+            border-radius: 50%; border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04); color: var(--text-secondary);
+            font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════ LOADER ═══════ -->
+    <div id="loader">
+        <div class="loader-ring"><div class="loader-core"></div></div>
+        <div class="loader-text">Calibrating Hardware... Mapping Galaxy</div>
+        <div class="loader-progress"><div class="loader-progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <!-- ═══════ 3D CANVAS ═══════ -->
+    <canvas id="galaxy-canvas"></canvas>
+
+    <!-- ═══════ SUN LABEL ═══════ -->
+    <div class="sun-label" id="sunLabel">
+        <div class="sun-label-name">Daniel</div>
+        <div class="sun-label-role">Engineering Student • Founder • Digital Strategist</div>
+    </div>
+
+    <!-- ═══════ PLANET TOOLTIP ═══════ -->
+    <div class="planet-tooltip" id="tooltip">
+        <div class="planet-tooltip-name" id="tooltipName"></div>
+        <div class="planet-tooltip-sub" id="tooltipSub">Click to explore</div>
+    </div>
+
+    <!-- ═══════ TOP HUD ═══════ -->
+    <div class="hud-top">
+        <div class="hud-logo" onclick="resetCamera()">
+            <div class="hud-logo-dot"></div>
+            <span>DANIEL.OS</span>
+        </div>
+        <div class="hud-nav" id="hudNav">
+            <button class="hud-nav-btn" data-planet="0" onclick="focusPlanet(0)">About</button>
+            <button class="hud-nav-btn" data-planet="1" onclick="focusPlanet(1)">Skills</button>
+            <button class="hud-nav-btn" data-planet="2" onclick="focusPlanet(2)">Experience</button>
+            <button class="hud-nav-btn" data-planet="3" onclick="focusPlanet(3)">Ventures</button>
+            <button class="hud-nav-btn" data-planet="4" onclick="focusPlanet(4)">Contact</button>
+        </div>
+        <div class="mobile-nav-toggle" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <!-- ═══════ BOTTOM HUD ═══════ -->
+    <div class="hud-bottom">
+        <div class="hud-hint">
+            <div class="hud-hint-icon">⟲</div> Drag to orbit
+            <div class="hud-hint-icon" style="margin-left:8px">⊕</div> Scroll to zoom
+            <div class="hud-hint-icon" style="margin-left:8px">☉</div> Click planets
+        </div>
+        <div class="hud-controls">
+            <div class="hud-slider-group">
+                <span class="hud-slider-label">Orbit Speed</span>
+                <input type="range" class="hud-slider" id="speedSlider" min="0" max="200" value="50">
+            </div>
+            <div class="hud-slider-group">
+                <span class="hud-slider-label">Glow</span>
+                <input type="range" class="hud-slider" id="glowSlider" min="20" max="150" value="100">
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ MOBILE MENU ═══════ -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
+        <button class="mobile-menu-btn" onclick="focusPlanet(0); toggleMobileMenu()">About</button>
+        <button class="mobile-menu-btn" onclick="focusPlanet(1); toggleMobileMenu()">Skills</button>
+        <button class="mobile-menu-btn" onclick="focusPlanet(2); toggleMobileMenu()">Experience</button>
+        <button class="mobile-menu-btn" onclick="focusPlanet(3); toggleMobileMenu()">Ventures</button>
+        <button class="mobile-menu-btn" onclick="focusPlanet(4); toggleMobileMenu()">Contact</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ═══════ PANEL: ABOUT ═══════ -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="panel-overlay" id="panel-about">
+        <div class="panel-backdrop" onclick="closePanel('about')"></div>
+        <div class="panel">
+            <div class="panel-close"><button class="panel-close-btn" onclick="closePanel('about')">✕</button></div>
+            <div class="panel-content">
+                <div class="panel-planet-icon" style="background: radial-gradient(circle at 30% 30%, #10B981, #047857);">🌍</div>
+                <div class="panel-title">About Me</div>
+                <div class="panel-subtitle">Bridging the gap between technical precision, digital creation, and venture building.</div>
+
+                <div class="about-hero">
+                    <div class="about-avatar"><div class="about-avatar-inner">👨‍💻</div></div>
+                    <div class="about-intro">
+                        <h3>Daniel</h3>
+                        <p>4th-Year Engineering Student @ FUNAAB<br>📍 Lagos / Abeokuta, Nigeria 🇳🇬</p>
+                    </div>
+                </div>
+
+                <div class="about-bio">
+                    <p>I am a forward-thinking engineering student with a passion for building things that matter. Whether it's advocating for financial literacy on campus, structuring a luxury resale business, or deep-diving into mobile hardware benchmarks, I thrive on <strong>optimization and creation</strong>.</p>
+                    <br>
+                    <p>I operate at the intersection of <strong>technical analysis</strong> and <strong>creative strategy</strong>, helping brands look premium and systems run efficiently.</p>
+                </div>
+
+                <div class="panel-divider"></div>
+                <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;">Core Traits & Quirks</div>
+
+                <div class="quirks-grid">
+                    <div class="quirk-card">
+                        <div class="quirk-header">
+                            <span class="quirk-icon">🧪</span>
+                            <span class="quirk-title">The Tech Alchemist</span>
+                        </div>
+                        <div class="quirk-desc">I’m the guy who will deep-dive into an AnTuTu benchmark or a phone's hardware bypass charging features just to squeak out an extra 5% gaming or processing efficiency.</div>
+                    </div>
+                    <div class="quirk-card">
+                        <div class="quirk-header">
+                            <span class="quirk-icon">🏴‍☠️</span>
+                            <span class="quirk-title">Pop-Culture & Lore Deep-Diver</span>
+                        </div>
+                        <div class="quirk-desc">When I'm not studying engineering or building businesses, I’m likely analyzing the intricate world-building of One Piece, debating character power scalings, or appreciating high-tier animation.</div>
+                    </div>
+                    <div class="quirk-card">
+                        <div class="quirk-header">
+                            <span class="quirk-icon">🎬</span>
+                            <span class="quirk-title">The Behind-the-Scenes Catalyst</span>
+                        </div>
+                        <div class="quirk-desc">Whether it's helping a pastry brand launch clean visuals or structuring a resale business, I love the mechanics of making a brand look premium and function seamlessly.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ═══════ PANEL: SKILLS ═══════ -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="panel-overlay" id="panel-skills">
+        <div class="panel-backdrop" onclick="closePanel('skills')"></div>
+        <div class="panel">
+            <div class="panel-close"><button class="panel-close-btn" onclick="closePanel('skills')">✕</button></div>
+            <div class="panel-content">
+                <div class="panel-planet-icon" style="background: radial-gradient(circle at 30% 30%, #FF8A65, #BF360C);">🔥</div>
+                <div class="panel-title">Skills & Expertise</div>
+                <div class="panel-subtitle">A blend of technical precision, hardware optimization, and creative direction.</div>
+
+                <div class="skill-category">
+                    <div class="skill-category-title">Technical & Digital</div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(0,212,255,0.1);">💻</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Frontend Web Development</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="85" style="background: linear-gradient(90deg, #00D4FF, #0077B6);"></div></div>
+                        </div>
+                        <div class="skill-level">85%</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(255,60,172,0.1);">⚙️</div>
+                        <div class="skill-info">
+                            <div class="skill-name">AI-Assisted Workflows</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="90" style="background: linear-gradient(90deg, #FF3CAC, #784BA0);"></div></div>
+                        </div>
+                        <div class="skill-level">90%</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(16,185,129,0.1);">📱</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Hardware Analysis & Benchmarking</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="95" style="background: linear-gradient(90deg, #10B981, #047857);"></div></div>
+                        </div>
+                        <div class="skill-level">95%</div>
+                    </div>
+                </div>
+
+                <div class="skill-category">
+                    <div class="skill-category-title">Creative & Visual</div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(253,184,19,0.1);">📸</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Photography & Videography</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="88" style="background: linear-gradient(90deg, #FDB813, #FF8C00);"></div></div>
+                        </div>
+                        <div class="skill-level">88%</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(120,75,160,0.1);">🎨</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Digital Design & Brand Aesthetics</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="82" style="background: linear-gradient(90deg, #784BA0, #4A148C);"></div></div>
+                        </div>
+                        <div class="skill-level">82%</div>
+                    </div>
+                </div>
+
+                <div class="skill-category">
+                    <div class="skill-category-title">Business & Strategy</div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(99,102,241,0.1);">📈</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Venture Building & Logistics</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="80" style="background: linear-gradient(90deg, #6366F1, #4338CA);"></div></div>
+                        </div>
+                        <div class="skill-level">80%</div>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-icon-wrap" style="background: rgba(244,67,54,0.1);">🧠</div>
+                        <div class="skill-info">
+                            <div class="skill-name">Digital Strategy & Marketing</div>
+                            <div class="skill-bar-track"><div class="skill-bar-fill" data-width="85" style="background: linear-gradient(90deg, #F44336, #B71C1C);"></div></div>
+                        </div>
+                        <div class="skill-level">85%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ═══════ PANEL: EXPERIENCE ═══════ -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="panel-overlay" id="panel-experience">
+        <div class="panel-backdrop" onclick="closePanel('experience')"></div>
+        <div class="panel">
+            <div class="panel-close"><button class="panel-close-btn" onclick="closePanel('experience')">✕</button></div>
+            <div class="panel-content">
+                <div class="panel-planet-icon" style="background: radial-gradient(circle at 30% 30%, #FFD54F, #E65100);">🪐</div>
+                <div class="panel-title">Experience</div>
+                <div class="panel-subtitle">Leadership, advocacy, and strategic roles across campus and industry.</div>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">Current</div>
+                        <div class="timeline-role">Campus Ambassador</div>
+                        <div class="timeline-company">Cowrywise • FUNAAB</div>
+                        <div class="timeline-desc">Promoting financial literacy, smart saving habits, and investment culture within the university community. Serving as a strategic liaison between a premier Nigerian fintech platform and the student ecosystem.</div>
+                        <div class="timeline-tags">
+                            <span class="timeline-tag">FinTech</span>
+                            <span class="timeline-tag">Advocacy</span>
+                            <span class="timeline-tag">Leadership</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">Ongoing</div>
+                        <div class="timeline-role">Co-Founder</div>
+                        <div class="timeline-company">JIT / Joyful Declutter</div>
+                        <div class="timeline-desc">Co-leading a modern luxury resale and decluttering service. Focusing on seamless policy implementation, logistics coordination, and premium brand marketing to elevate the second-hand market.</div>
+                        <div class="timeline-tags">
+                            <span class="timeline-tag">Entrepreneurship</span>
+                            <span class="timeline-tag">Logistics</span>
+                            <span class="timeline-tag">Luxury Resale</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-date">Consulting</div>
+                        <div class="timeline-role">Brand Consultant & Digital Strategist</div>
+                        <div class="timeline-company">Zee Cakes n Pastries</div>
+                        <div class="timeline-desc">Assisted the founder in elevating the brand's digital presence. Managed creative assets, designed marketing flyers, and structured visual campaigns to drive growth and customer engagement.</div>
+                        <div class="timeline-tags">
+                            <span class="timeline-tag">Brand Strategy</span>
+                            <span class="timeline-tag">Digital Design</span>
+                            <span class="timeline-tag">Marketing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ═══════ PANEL: VENTURES / PROJECTS ═══════ -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="panel-overlay" id="panel-projects">
+        <div class="panel-backdrop" onclick="closePanel('projects')"></div>
+        <div class="panel">
+            <div class="panel-close"><button class="panel-close-btn" onclick="closePanel('projects')">✕</button></div>
+            <div class="panel-content">
+                <div class="panel-planet-icon" style="background: radial-gradient(circle at 30% 30%, #CE93D8, #6A1B9A);">💎</div>
+                <div class="panel-title">Ventures & Projects</div>
+                <div class="panel-subtitle">Selected works, businesses, and creative experiments.</div>
+
+                <div class="project-card">
+                    <div class="project-preview">
+                        <div class="project-preview-bg" style="background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);">👜</div>
+                        <div class="project-preview-overlay"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-type">Startup / E-Commerce</div>
+                        <div class="project-name">JIT (Joyful Declutter)</div>
+                        <div class="project-desc">A modern luxury resale and decluttering platform. We bridge the gap between premium fashion and sustainable consumption, handling everything from secure logistics to high-end brand marketing.</div>
+                        <div class="project-stack">
+                            <span class="project-stack-tag">Business Strategy</span>
+                            <span class="project-stack-tag">Logistics</span>
+                            <span class="project-stack-tag">Brand Marketing</span>
+                        </div>
+                        <div class="project-links-row">
+                            <a href="#" class="project-link project-link-primary">🔗 Visit Platform</a>
+                            <a href="#" class="project-link project-link-secondary">📂 Case Study →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-preview">
+                        <div class="project-preview-bg" style="background: linear-gradient(135deg, #2d1b4e, #4a1c6b, #6b2fa0);">🍰</div>
+                        <div class="project-preview-overlay"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-type">Brand Revamp / Strategy</div>
+                        <div class="project-name">Zee Cakes n Pastries</div>
+                        <div class="project-desc">Complete digital and visual overhaul for a local pastry brand. Designed high-converting marketing flyers, established a cohesive visual identity, and managed digital assets to drive customer engagement.</div>
+                        <div class="project-stack">
+                            <span class="project-stack-tag">Visual Identity</span>
+                            <span class="project-stack-tag">Flyer Design</span>
+                            <span class="project-stack-tag">Social Media</span>
+                        </div>
+                        <div class="project-links-row">
+                            <a href="#" class="project-link project-link-primary">🎨 View Designs</a>
+                            <a href="#" class="project-link project-link-secondary">📂 Details →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-preview">
+                        <div class="project-preview-bg" style="background: linear-gradient(135deg, #0a2e1a, #1b4332, #2d6a4f);">📱</div>
+                        <div class="project-preview-overlay"></div>
+                    </div>
+                    <div class="project-body">
+                        <div class="project-type">Tech Analysis / Content</div>
+                        <div class="project-name">Hardware Optimization Deep-Dives</div>
+                        <div class="project-desc">Extensive research and content creation focusing on mobile hardware benchmarking, thermal performance tracking, and OS architecture optimization to squeeze out maximum efficiency.</div>
+                        <div class="project-stack">
+                            <span class="project-stack-tag">AnTuTu</span>
+                            <span class="project-stack-tag">Thermal Tracking</span>
+                            <span class="project-stack-tag">OS Arch</span>
+                        </div>
+                        <div class="project-links-row">
+                            <a href="#" class="project-link project-link-primary">📊 Read Analysis</a>
+                            <a href="#" class="project-link project-link-secondary">📂 Data →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ═══════ PANEL: CONTACT ═══════ -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="panel-overlay" id="panel-contact">
+        <div class="panel-backdrop" onclick="closePanel('contact')"></div>
+        <div class="panel">
+            <div class="panel-close"><button class="panel-close-btn" onclick="closePanel('contact')">✕</button></div>
+            <div class="panel-content">
+                <div class="panel-planet-icon" style="background: radial-gradient(circle at 30% 30%, #80DEEA, #006064);">🧊</div>
+                <div class="panel-title">Contact</div>
+                <div class="panel-subtitle">Let's connect across the cosmos. Open to collaborations, ventures, and tech talks.</div>
+
+                <div class="contact-methods">
+                    <a href="mailto:daniel@example.com" class="contact-method">
+                        <div class="contact-method-icon" style="background: rgba(253,184,19,0.1);">📧</div>
+                        <div class="contact-method-info">
+                            <div class="contact-method-label">Email</div>
+                            <div class="contact-method-value">daniel@example.com</div>
+                        </div>
+                        <div class="contact-method-arrow">→</div>
+                    </a>
+                    <a href="#" class="contact-method">
+                        <div class="contact-method-icon" style="background: rgba(0,212,255,0.1);">💼</div>
+                        <div class="contact-method-info">
+                            <div class="contact-method-label">LinkedIn</div>
+                            <div class="contact-method-value">linkedin.com/in/daniel</div>
+                        </div>
+                        <div class="contact-method-arrow">→</div>
+                    </a>
+                    <a href="#" class="contact-method">
+                        <div class="contact-method-icon" style="background: rgba(29,161,242,0.1);">🐦</div>
+                        <div class="contact-method-info">
+                            <div class="contact-method-label">Twitter / X</div>
+                            <div class="contact-method-value">@daniel_handles</div>
+                        </div>
+                        <div class="contact-method-arrow">→</div>
+                    </a>
+                    <a href="#" class="contact-method">
+                        <div class="contact-method-icon" style="background: rgba(16,185,129,0.1);">📍</div>
+                        <div class="contact-method-info">
+                            <div class="contact-method-label">Location</div>
+                            <div class="contact-method-value">Lagos / Abeokuta, Nigeria 🇳🇬</div>
+                        </div>
+                        <div class="contact-method-arrow">→</div>
+                    </a>
+                </div>
+
+                <div class="panel-divider"></div>
+
+                <div style="font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 20px;">Send a Transmission</div>
+
+                <form onsubmit="handleContactSubmit(event)">
+                    <div class="contact-form-group">
+                        <label class="contact-form-label">Your Name</label>
+                        <input type="text" class="contact-form-input" placeholder="John Doe" required>
+                    </div>
+                    <div class="contact-form-group">
+                        <label class="contact-form-label">Email Address</label>
+                        <input type="email" class="contact-form-input" placeholder="john@example.com" required>
+                    </div>
+                    <div class="contact-form-group">
+                        <label class="contact-form-label">Subject</label>
+                        <input type="text" class="contact-form-input" placeholder="Let's build something great">
+                    </div>
+                    <div class="contact-form-group">
+                        <label class="contact-form-label">Message</label>
+                        <textarea class="contact-form-textarea" placeholder="Tell me about your project or idea..." required></textarea>
+                    </div>
+                    <button type="submit" class="contact-form-btn" id="contactBtn">Send Transmission ✦</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- ═══════ THREE.JS + SCENE ═══════ -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+    // ═══════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════
+    const PLANET_DATA = [
+        { name: 'About Me',     sub: 'The Tech Alchemist',   panel: 'about',      color: 0x10B981, emissive: 0x047857, radius: 0.7,  orbit: 5,   speed: 0.4,  tilt: 0.1,  icon: '🌍' },
+        { name: 'Skills',       sub: 'Hardware & Code',      panel: 'skills',     color: 0xFF8A65, emissive: 0xBF360C, radius: 0.6,  orbit: 7.5, speed: 0.3,  tilt: 0.15, icon: '🔥' },
+        { name: 'Experience',   sub: 'Leadership & Strategy',panel: 'experience', color: 0xFFD54F, emissive: 0xE65100, radius: 1.0,  orbit: 10.5,speed: 0.2,  tilt: 0.05, icon: '🪐' },
+        { name: 'Ventures',     sub: 'JIT, Zee Cakes & More',panel: 'projects',   color: 0xCE93D8, emissive: 0x6A1B9A, radius: 0.85, orbit: 13.5,speed: 0.15, tilt: 0.2,  icon: '💎', hasRing: true },
+        { name: 'Contact',      sub: 'Send a Transmission',  panel: 'contact',    color: 0x80DEEA, emissive: 0x006064, radius: 0.55, orbit: 16,  speed: 0.1,  tilt: 0.12, icon: '🧊' },
+    ];
+
+    let scene, camera, renderer, controls;
+    let sun, sunGlow, planets = [], orbitLines = [], planetMeshes = [];
+    let raycaster, mouse, hoveredPlanet = null;
+    let clock = new THREE.Clock();
+    let speedMultiplier = 1;
+    let glowMultiplier = 1;
+    let isPanelOpen = false;
+    let cameraTarget = null;
+    let cameraTargetPos = null;
+    let cameraAnimating = false;
+    let savedCameraPos = null;
+    let savedControlsTarget = null;
+
+    // ═══════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════
+    function init() {
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030014, 0.008);
+
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(12, 10, 18);
+
+        const canvas = document.getElementById('galaxy-canvas');
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 6;
+        controls.maxDistance = 45;
+        controls.maxPolarAngle = Math.PI * 0.85;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.3;
+
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        createStarField();
+        createNebula();
+        createSun();
+        createPlanets();
+        createOrbitRings();
+        createAsteroidBelt();
+        createLights();
+
+        window.addEventListener('resize', onResize);
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('click', onMouseClick);
+        canvas.addEventListener('touchend', onTouchEnd);
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speedMultiplier = e.target.value / 50;
+        });
+
+        document.getElementById('glowSlider').addEventListener('input', (e) => {
+            glowMultiplier = e.target.value / 100;
+            if (sunGlow) sunGlow.material.opacity = 0.15 * glowMultiplier;
+        });
+
+        simulateLoading();
+    }
+
+    function simulateLoading() {
+        const bar = document.getElementById('progressBar');
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15 + 5;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.getElementById('loader').classList.add('hidden');
+                    document.getElementById('sunLabel').classList.add('visible');
+                }, 400);
+            }
+            bar.style.width = progress + '%';
+        }, 200);
+    }
+
+    // ═══════════════════════════════════════
+    // SCENE BUILDERS
+    // ═══════════════════════════════════════
+    function createStarField() {
+        const starsGeo = new THREE.BufferGeometry();
+        const count = 8000;
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+
+        for (let i = 0; i < count; i++) {
+            const r = 80 + Math.random() * 120;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+
+            positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            positions[i * 3 + 2] = r * Math.cos(phi);
+
+            const colorChoice = Math.random();
+            if (colorChoice < 0.1) { colors[i * 3] = 0.7; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 1.0; }
+            else if (colorChoice < 0.15) { colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.9; colors[i * 3 + 2] = 0.7; }
+            else { colors[i * 3] = 0.9; colors[i * 3 + 1] = 0.9; colors[i * 3 + 2] = 0.95; }
+        }
+
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        starsGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const starsMat = new THREE.PointsMaterial({ size: 0.4, vertexColors: true, transparent: true, opacity: 0.8, sizeAttenuation: true });
+        scene.add(new THREE.Points(starsGeo, starsMat));
+    }
+
+    function createNebula() {
+        const nebulaColors = [0x6B2FA0, 0x1A3A6B, 0x2E1065, 0x0C2340];
+        for (let i = 0; i < 12; i++) {
+            const geo = new THREE.SphereGeometry(15 + Math.random() * 25, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: nebulaColors[Math.floor(Math.random() * nebulaColors.length)], transparent: true, opacity: 0.015 + Math.random() * 0.02, side: THREE.BackSide });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 80);
+            mesh.scale.set(1 + Math.random(), 0.5 + Math.random() * 0.5, 1 + Math.random());
+            scene.add(mesh);
+        }
+    }
+
+    function createSun() {
+        const sunGeo = new THREE.SphereGeometry(2, 64, 64);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xFDB813 });
+        sun = new THREE.Mesh(sunGeo, sunMat);
+        scene.add(sun);
+
+        const glowGeo = new THREE.SphereGeometry(2.3, 64, 64);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xFF8C00, transparent: true, opacity: 0.15, side: THREE.BackSide });
+        sunGlow = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(sunGlow);
+
+        for (let i = 0; i < 3; i++) {
+            const layerGeo = new THREE.SphereGeometry(2.6 + i * 0.6, 32, 32);
+            const layerMat = new THREE.MeshBasicMaterial({ color: i === 0 ? 0xFDB813 : (i === 1 ? 0xFF8C00 : 0xFF6D00), transparent: true, opacity: 0.04 - i * 0.01, side: THREE.BackSide });
+            scene.add(new THREE.Mesh(layerGeo, layerMat));
+        }
+
+        const coronaGeo = new THREE.BufferGeometry();
+        const coronaCount = 500;
+        const coronaPos = new Float32Array(coronaCount * 3);
+        for (let i = 0; i < coronaCount; i++) {
+            const r = 2.2 + Math.random() * 1.5;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            coronaPos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+            coronaPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            coronaPos[i * 3 + 2] = r * Math.cos(phi);
+        }
+        coronaGeo.setAttribute('position', new THREE.BufferAttribute(coronaPos, 3));
+        const coronaMat = new THREE.PointsMaterial({ color: 0xFDB813, size: 0.06, transparent: true, opacity: 0.6 });
+        const corona = new THREE.Points(coronaGeo, coronaMat);
+        corona.name = 'corona';
+        scene.add(corona);
+    }
+
+    function createPlanets() {
+        PLANET_DATA.forEach((data, i) => {
+            const group = new THREE.Group();
+
+            const geo = new THREE.SphereGeometry(data.radius, 48, 48);
+            const mat = new THREE.MeshStandardMaterial({ color: data.color, emissive: data.emissive, emissiveIntensity: 0.3, roughness: 0.6, metalness: 0.2 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.userData = { planetIndex: i, ...data };
+            group.add(mesh);
+
+            const atmosGeo = new THREE.SphereGeometry(data.radius * 1.15, 32, 32);
+            const atmosMat = new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.08, side: THREE.BackSide });
+            group.add(new THREE.Mesh(atmosGeo, atmosMat));
+
+            if (data.hasRing) {
+                const ringGeo = new THREE.RingGeometry(data.radius * 1.4, data.radius * 2.2, 64);
+                const ringMat = new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI * 0.4;
+                group.add(ring);
+            }
+
+            if (i === 2 || i === 4) {
+                const moonGeo = new THREE.SphereGeometry(0.12, 16, 16);
+                const moonMat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.8 });
+                const moon = new THREE.Mesh(moonGeo, moonMat);
+                moon.userData.isMoon = true;
+                moon.userData.moonOrbit = data.radius * 2;
+                moon.userData.moonSpeed = 2 + Math.random();
+                group.add(moon);
+            }
+
+            const angle = (i / PLANET_DATA.length) * Math.PI * 2;
+            group.position.x = Math.cos(angle) * data.orbit;
+            group.position.z = Math.sin(angle) * data.orbit;
+            group.position.y = Math.sin(angle * 2) * data.tilt * 3;
+
+            group.userData = { ...data, angle: angle, baseAngle: angle };
+            scene.add(group);
+            planets.push(group);
+            planetMeshes.push(mesh);
+        });
+    }
+
+    function createOrbitRings() {
+        PLANET_DATA.forEach((data) => {
+            const curve = new THREE.EllipseCurve(0, 0, data.orbit, data.orbit, 0, Math.PI * 2, false, 0);
+            const points = curve.getPoints(128);
+            const geo = new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(p.x, 0, p.y)));
+            const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04 });
+            const line = new THREE.Line(geo, mat);
+            scene.add(line);
+            orbitLines.push(line);
+        });
+    }
+
+    function createAsteroidBelt() {
+        const asteroidGeo = new THREE.BufferGeometry();
+        const count = 600;
+        const positions = new Float32Array(count * 3);
+
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = 8.5 + (Math.random() - 0.5) * 1.2;
+            positions[i * 3]     = Math.cos(angle) * r;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 0.4;
+            positions[i * 3 + 2] = Math.sin(angle) * r;
+        }
+
+        asteroidGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const asteroidMat = new THREE.PointsMaterial({ color: 0x888888, size: 0.06, transparent: true, opacity: 0.4 });
+        const belt = new THREE.Points(asteroidGeo, asteroidMat);
+        belt.name = 'asteroidBelt';
+        scene.add(belt);
+    }
+
+    function createLights() {
+        const pointLight = new THREE.PointLight(0xFDB813, 2, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+        scene.add(new THREE.AmbientLight(0x222244, 0.5));
+        scene.add(new THREE.HemisphereLight(0x6B2FA0, 0x030014, 0.3));
+    }
+
+    // ═══════════════════════════════════════
+    // ANIMATION LOOP
+    // ═══════════════════════════════════════
+    function animate() {
+        requestAnimationFrame(animate);
+        const elapsed = clock.getElapsedTime();
+
+        if (sun) sun.rotation.y += 0.002;
+        const corona = scene.getObjectByName('corona');
+        if (corona) corona.rotation.y -= 0.001;
+
+        if (sunGlow) {
+            const pulse = 1 + Math.sin(elapsed * 1.5) * 0.03;
+            sunGlow.scale.set(pulse, pulse, pulse);
+        }
+
+        planets.forEach((group, i) => {
+            const data = group.userData;
+            data.angle += 0.003 * data.speed * speedMultiplier;
+
+            group.position.x = Math.cos(data.angle) * data.orbit;
+            group.position.z = Math.sin(data.angle) * data.orbit;
+            group.position.y = Math.sin(data.angle * 2 + data.baseAngle) * data.tilt * 3;
+
+            const mesh = group.children[0];
+            if (mesh) mesh.rotation.y += 0.005;
+
+            group.children.forEach(child => {
+                if (child.userData && child.userData.isMoon) {
+                    const moonAngle = elapsed * child.userData.moonSpeed;
+                    child.position.x = Math.cos(moonAngle) * child.userData.moonOrbit;
+                    child.position.z = Math.sin(moonAngle) * child.userData.moonOrbit;
+                    child.position.y = Math.sin(moonAngle * 0.5) * 0.2;
+                }
+            });
+        });
+
+        const belt = scene.getObjectByName('asteroidBelt');
+        if (belt) belt.rotation.y += 0.0003 * speedMultiplier;
+
+        if (cameraAnimating && cameraTargetPos) {
+            camera.position.lerp(cameraTargetPos, 0.03);
+            if (controls.target && cameraTarget) controls.target.lerp(cameraTarget.position, 0.03);
+            if (camera.position.distanceTo(cameraTargetPos) < 0.1) cameraAnimating = false;
+        }
+
+        updateHover();
+        updateSunLabel();
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    function updateHover() {
+        if (isPanelOpen) return;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(planetMeshes);
+        const tooltip = document.getElementById('tooltip');
+
+        if (intersects.length > 0) {
+            const obj = intersects[0].object;
+            const data = obj.userData;
+
+            if (hoveredPlanet !== obj) {
+                hoveredPlanet = obj;
+                document.getElementById('tooltipName').textContent = data.name;
+                document.getElementById('tooltipSub').textContent = data.sub + ' — Click to explore';
+                document.body.style.cursor = 'pointer';
+                obj.material.emissiveIntensity = 0.7;
+            }
+
+            const screenPos = obj.parent.position.clone().project(camera);
+            const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+            tooltip.style.left = (x + 20) + 'px';
+            tooltip.style.top = (y - 20) + 'px';
+            tooltip.classList.add('visible');
+        } else {
+            if (hoveredPlanet) {
+                hoveredPlanet.material.emissiveIntensity = 0.3;
+                hoveredPlanet = null;
+                document.body.style.cursor = 'default';
+            }
+            tooltip.classList.remove('visible');
+        }
+    }
+
+    function updateSunLabel() {
+        const label = document.getElementById('sunLabel');
+        if (!sun || isPanelOpen) { label.style.opacity = '0'; return; }
+        const pos = new THREE.Vector3(0, 3.2, 0).project(camera);
+        const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+        label.style.left = x + 'px';
+        label.style.top = y + 'px';
+        label.style.transform = 'translate(-50%, -100%)';
+    }
+
+    // ═══════════════════════════════════════
+    // EVENTS
+    // ═══════════════════════════════════════
+    function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onMouseMove(e) {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onMouseClick(e) {
+        if (isPanelOpen) return;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(planetMeshes);
+        if (intersects.length > 0) openPlanet(intersects[0].object.userData.planetIndex);
+    }
+
+    function onTouchEnd(e) {
+        if (isPanelOpen || !e.changedTouches.length) return;
+        const touch = e.changedTouches[0];
+        mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(planetMeshes);
+        if (intersects.length > 0) openPlanet(intersects[0].object.userData.planetIndex);
+    }
+
+    function openPlanet(index) {
+        const data = PLANET_DATA[index];
+        const group = planets[index];
+
+        savedCameraPos = camera.position.clone();
+        savedControlsTarget = controls.target.clone();
+
+        const planetPos = group.position.clone();
+        const offset = planetPos.clone().normalize().multiplyScalar(4);
+        offset.y += 2;
+        cameraTargetPos = planetPos.clone().add(offset);
+        cameraTarget = group;
+        cameraAnimating = true;
+        controls.autoRotate = false;
+
+        setTimeout(() => {
+            isPanelOpen = true;
+            document.getElementById('panel-' + data.panel).classList.add('open');
+            if (data.panel === 'skills') setTimeout(animateSkillBars, 300);
+            document.querySelectorAll('.hud-nav-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.planet) === index);
+            });
+        }, 600);
+    }
+
+    function focusPlanet(index) {
+        if (isPanelOpen) closePanel(PLANET_DATA[index].panel, true);
+        setTimeout(() => openPlanet(index), isPanelOpen ? 400 : 0);
+    }
+
+    function closePanel(name, skipCamera) {
+        document.getElementById('panel-' + name).classList.remove('open');
+        isPanelOpen = false;
+        document.querySelectorAll('.hud-nav-btn').forEach(btn => btn.classList.remove('active'));
+
+        if (savedCameraPos && !skipCamera) {
+            cameraTargetPos = savedCameraPos;
+            cameraTarget = { position: savedControlsTarget || new THREE.Vector3(0,0,0) };
+            cameraAnimating = true;
+            setTimeout(() => { controls.autoRotate = true; cameraAnimating = false; }, 1500);
+        }
+        document.querySelectorAll('.skill-bar-fill').forEach(bar => bar.style.width = '0%');
+    }
+
+    function resetCamera() {
+        if (isPanelOpen) {
+            const openPanel = document.querySelector('.panel-overlay.open');
+            if (openPanel) closePanel(openPanel.id.replace('panel-', ''));
+        }
+        cameraTargetPos = new THREE.Vector3(12, 10, 18);
+        cameraTarget = { position: new THREE.Vector3(0, 0, 0) };
+        cameraAnimating = true;
+        controls.autoRotate = true;
+    }
+
+    function animateSkillBars() {
+        document.querySelectorAll('.skill-bar-fill').forEach((bar, i) => {
+            setTimeout(() => bar.style.width = bar.dataset.width + '%', i * 80);
+        });
+    }
+
+    function toggleMobileMenu() {
+        document.getElementById('mobileMenu').classList.toggle('open');
+    }
+
+    function handleContactSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('contactBtn');
+        btn.textContent = 'Transmission Sent! ✓';
+        btn.style.background = 'linear-gradient(135deg, #10B981, #047857)';
+        btn.style.color = '#fff';
+        setTimeout(() => {
+            btn.textContent = 'Send Transmission ✦';
+            btn.style.background = '';
+            btn.style.color = '';
+            e.target.reset();
+        }, 2500);
+    }
+
+    // ═══════════════════════════════════════
+    // START
+    // ═══════════════════════════════════════
+    init();
+    animate();
+    </script>
+</body>
+</html>
+
